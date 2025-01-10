@@ -1,0 +1,38 @@
+service:
+  type: NodePort
+  nodePorts:
+    http: 30080
+    https: 30443
+ingress:
+  enabled: false
+mariadb:
+  auth:
+    rootPassword: "Change_this_root_password_123"
+    database: wordpress
+    username: wordpress
+    password: "Change_this_db_password_123"
+wordpressPassword: "Change_this_wp_password_123"
+wordpressEmail: "admin@example.com"
+wordpressUsername: admin
+persistence:
+  enabled: true
+  size: 10Gi
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+mariadb:
+  primary:
+    persistence:
+      enabled: true
+      size: 8Gi
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 250m
+        memory: 256Mi
