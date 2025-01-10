@@ -1,0 +1,42 @@
+- hosts: all
+  become: yes
+  tasks:
+    - name: Download K3s install script
+      get_url:
+        url: https://get.k3s.io
+        dest: /tmp/k3s-install.sh
+        mode: '0755'
+
+    - name: Install K3s
+      shell: /tmp/k3s-install.sh
+      environment:
+        INSTALL_K3S_EXEC: "--write-kubeconfig-mode 644 --tls-san {{ ansible_host }}"
+
+    - name: Wait for node to become ready (using k3s kubectl)
+      shell: k3s kubectl wait node {{ ansible_hostname }} --for condition=ready --timeout=60s
+      ignore_errors: yes
+
+    - name: Fetch k3s.yaml (kubeconfig) from remote
+      fetch:
+        src: /etc/rancher/k3s/k3s.yaml
+        dest: /workspace/k3s.yaml
+        flat: yes
+
+    - name: Get node status
+      shell: k3s kubectl get nodes
+      register: node_status
+      ignore_errors: yes
+
+    - name: Display node status
+      debug:
+        var: node_status.stdout_lines
+      when: node_status.rc == 0
+
+- hosts: localhost
+  connection: local
+  tasks:
+    - name: Replace default server IP with actual IP in kubeconfig
+      replace:
+        path: /workspace/k3s.yaml
+        regexp: 'https://127.0.0.1:'
+        replace: "https://{{ hostvars['aws_machine']['ansible_host'] }}:"
